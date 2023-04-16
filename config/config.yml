@@ -1,0 +1,30 @@
+name: blog_backend
+# 环境标识
+env: dev
+
+server: 
+  port: 7000
+  # 超时（ms）
+  timeout: 60000
+
+# redis:
+#   host: 127.0.0.1
+#   port: 6379
+#   password: 
+#   db: 0
+
+# 日志
+log:
+  # 文件名（不含文件类型）
+  filename: blog_backend
+  # 支持绝对路径（默认路径 linux: /root/logs, win: [basedir]/logs ）
+  # filepath: /root/logs
+  # 慢查询阈值
+  long_query_time: 300
+
+# jwt:
+#   issuer: issuer
+#   audience: gin_app_public
+#   expires: 7200
+#   secret_key: 'b183d0069faf241b'
+#   whitelist: '^\/api\/(user\/(login|register))|bing|tool'

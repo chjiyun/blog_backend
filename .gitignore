@@ -1,0 +1,12 @@
+# 忽略清单
+
+*.log
+tmp/
+build/
+main
+files/
+logs/
+hashkey.txt
+.vscode/
+.github/
+.idea

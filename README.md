@@ -1,2 +1,169 @@
 # blog_backend
 hexo_blog后端服务
+
+## 环境配置
+1. 安装golang，[官网地址](https://golang.google.cn/)
+2. 设置环境变量 GOPATH，可自定义文件夹
+3. 设置module代理：
+```
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+4. 初始化air
+```
+# install for macOS, Linux
+# binary will be $(go env GOPATH)/bin/air
+curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+# install for windows
+go install github.com/cosmtrek/air@latest
+# You can initialize the .air.toml
+air init 
+```
+5. 安装依赖
+```
+go mod download
+```
+
+6. 依赖管理
+```
+# 升级依赖
+go get -u -d github.com/gin-gonic/gin
+# 补全清理依赖
+go mod tidy
+```
+
+7. 单元测试
+
+`-v` 参数作用是无论用例是否通过都显示结果
+```
+# 运行所有测试文件
+go test -v
+# 运行该目录下含有Basename的测试函数
+go test -run Basename ./app/util -v
+# 运行该目录下全字匹配Basename的测试函数
+go test -run ^Basename$ ./app/util -v
+```
+
+8. 数据源dsn配置加密
+
+本地开发环境配置文件（config.dev.yml）不想暴露真实连接，可用对称加密（des）保护敏感数据，key 可用[哈希算法工具](http://www.jsons.cn/allencrypt/)生成一个长度大于16位的文本，根目录下新建`hashkey.txt`并粘贴密钥，然后git忽略跟踪这个文件
+
+```bash
+# 加密dsn连接信息，“src=”后填原文，密钥取自 hashkey.txt
+go test -run ^TestEncrypt$ .\app\util -v -args "src=*"
+# 解密dsn文本，“src=”后填加密文本
+go test -run ^TestDecrypt$ .\app\util -v -args "src=*"
+# 使用下面的测试函数生成一个sha1散列信息
+go test -run ^TestSha1$ .\app\util -v -args "src=*"
+```
+
+## 启动
+
+```shell
+# 原始方式
+go run ./main.go
+# air启动，支持热重载
+air
+```
+
+## 跨平台打包（交叉编译）
+
+Windows下编译 Linux平台的64位可执行程序：
+1. cmd
+
+```cmd
+SET CGO_ENABLED=0
+SET GOOS=linux
+SET GOARCH=amd64
+go build -o .\build\ .\main.go
+```
+
+2. powershell
+   注意：此方式打包后记得关闭当前shell窗口
+```powershell
+$env:CGO_ENABLED=0
+$env:GOOS="linux"
+$env:GOARCH="amd64"
+go build -o .\build\ .\main.go
+```
+
+```shell
+# Mac下编译Linux, Windows平台的64位可执行程序：
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build main.go
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build main.go
+
+# xshell将文件上传到服务器
+# -v, --verbose:输出传输过程中的提示信息
+# -y, --overwrite:存在同名文件则替换
+rz -y -v
+```
+
+## 手动部署
+
+后台启动
+```shell
+# 如果已经运行先杀进程 
+lsof -i:8000
+kill pid
+nohup ./main 1>info_2021_03_27.log 2>error.log & echo $! > pid.txt
+```
+
+* 其中数字1代表标准输出,2代表错误信息输出,还有未使用的标准输入即数字0.
+* 1>/dev/null 2>&1 &的意思是标准信息输出到空设备即不做任何处理,也不做任何显示,/dev/null也可以替换为文本文件名(如 out.log),此时标准信息就会输出到指定文件.
+* 2>&1表示错误信息输出到标准输出,即输出同1>后面的位置,当然也可以直接指定新文件名(如 err.log).
+* 最后的& 表示程序后台运行
+* echo 输出pid到文件
+
+## 一键部署（半自动）
+
+如果不想自定义启动可用如下命令实现一键部署：
+
+```shell
+# 运行前前拉取最新git代码
+chmod 755 ./build.sh
+# 会自动创建log、file目录，自动build
+./build.sh
+```
+
+若出现报错，显示pip命令不存在，则要安装相应的包，看这里[ubuntu下安装yq](https://www.jianshu.com/p/61d18e1685cd)
+
+## 其他
+
+```
+# 如果git diff显示filemode已改变，则用下面的命令忽视文件mode监控
+git config --add core.filemode false
+# 不跟踪某文件的更改，比如 config 文件
+git update-index --skip-worktree file1
+```
+
+## 查看编译时注入的版本信息
+```shell
+./gin_app -v
+./gin_app version
+```
+
+# linux安装go
+
+请前往golang [官网下载页面](https://golang.google.cn/dl/)，复制文件链接地址
+
+```shell
+# 下载压缩包
+wget https://golang.google.cn/dl/go1.16.3.linux-amd64.tar.gz
+# 解压
+tar -C /usr/local -xzf go1.16.3.linux-amd64.tar.gz
+# ~/.profile 文件末尾添加环境变量
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+# 生效
+source ~/.profile
+```
+
+# 注意
+
+若windows环境下使用logger后控制台出现这样的错误提示 "failed to rotate: failed to create new symlink ***.log ..."，
+请按照如下步骤解决：
+1. win + r 打开运行弹窗，输入secpol.msc
+2. 弹出一个本地安全策略窗口，依次找到安全设置>本地策略>用户权限分配，双击后右侧出现很多行策略，找到创建符号链接双击
+3. 新弹出的窗口中点击添加用户或组，把当前登录计算机的用户加进去，输用户名搜索即可，然后一路确定，还可能需要重启电脑
+
+

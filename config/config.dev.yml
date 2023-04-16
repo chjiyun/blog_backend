@@ -1,0 +1,19 @@
+# 本地 redis
+redis:
+  addr: 127.0.0.1:6379
+  password:
+  db: 0
+
+# dsn: username:password@tcp(ip:port)/database?charset=utf8&parseTime=True&loc=Local
+datasource:
+  -
+    model: model
+    dialect: mysql
+    dsn: 05e563aefa6ec2a7056738bbb71836ad6570efc280e2638a5aebbdc578b89e0a72f1954b3992ad675c0907c813f8ca6af6d6bfbdb57a84922add163a365ea4ad949dff1e8d67e859a31647e47bd8c927da6e368036444c4751fa1d3a45582702
+
+jwt:
+  issuer: chjiyun
+  audience: blog_backend
+  expires: 7200
+  secret_key: 'ced45aaaf3cbbecd'
+  whitelist: '^\/api\/(user\/(login|register))|bing|tool'
