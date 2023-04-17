@@ -23,6 +23,8 @@ logDir="/root/logs/${appName}"
 info_log="${logDir}/info.${today}.log"
 error_log="${logDir}/error.${today}.log"
 path="main"
+buildDir="./build"
+exeFile="${buildDir}/${targetFile}"
 
 echo "----------------------"
 echo "app name: ${appName}"
@@ -66,14 +68,17 @@ done
 
 echo "complete the clean"
 
+if [ ! -d "$buildDir" ]; then
+  mkdir "$buildDir"
+fi
 
 flags="-X '${path}.AppVersion=v1.0' -X '${path}.GoVersion=$(go version | awk '{print $3 " " $4}')' -X '${path}.BuildTime=$(date "+%Y.%m.%d %H:%M:%S")' -X '${path}.BuildUser=$(id -u -n)' -X '${path}.CommitId=$(git rev-parse --short HEAD)'"
-buildResult=`go build -ldflags "$flags" -o "${targetFile}" "$buildPkg"`
+buildResult=`go build -ldflags "$flags" -o "${exeFile}" "$buildPkg"`
 
 # 编译成功才能杀旧进程
 if [ $? -eq 0 ]; then 
-  chmod 773 ${targetFile}
-  echo "build success, filename: ${targetFile}"
+  chmod 773 ${exeFile}
+  echo "build success, filename: ${exeFile}"
 
   pid=`ps -ef |grep $targetFile | grep -v grep|awk '{print $2}'`
   echo "current pid is $pid"
@@ -87,8 +92,8 @@ else
   exit
 fi
 
-# nohup "./${targetFile}" 1>"${info_log}" 2>"${error_log}" & echo $! > "$pidFile"
-nohup "./${targetFile}" 1>/dev/null 2>&1 &
+# nohup "${exeFile}" 1>"${info_log}" 2>"${error_log}" & echo $! > "$pidFile"
+nohup "${exeFile}" 1>/dev/null 2>&1 &
 
 echo "starting..."
 # 监听端口是否启动
@@ -103,4 +108,4 @@ do
 done
 
 # 打印版本信息
-"./${targetFile}" -v
+"${exeFile}" -v
