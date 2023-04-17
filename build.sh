@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pwd=`pwd`
+pwd=$(pwd)
 # appName=`basename $pwd`
 # 从配置文件取name，默认是项目名，-r 代表过滤掉字符串的双引号
 appName=`cat ./config/config.yml | yq -r .name`
@@ -77,7 +77,7 @@ buildResult=`go build -ldflags "$flags" -o "${exeFile}" "$buildPkg"`
 
 # 编译成功才能杀旧进程
 if [ $? -eq 0 ]; then 
-  chmod 773 ${exeFile}
+  chmod 773 "${exeFile}"
   echo "build success, filename: ${exeFile}"
 
   pid=`ps -ef |grep $targetFile | grep -v grep|awk '{print $2}'`
@@ -99,8 +99,8 @@ echo "starting..."
 # 监听端口是否启动
 while :
 do
-    running=`lsof -i:$port | wc -l`
-    if [ $running -gt "0" ]; then
+    running=$(lsof -i:$port | wc -l)
+    if [ "$running" -gt "0" ]; then
         echo "server is running on $port"
         break
     fi
