@@ -15,7 +15,7 @@ buildPkg="main.go"
 # 编译结果
 buildResult=""
 # 应用启动端口
-port="8000"
+port="7000"
 
 today=$(date "+%Y_%m_%d")
 # 日志存放路径
