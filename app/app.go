@@ -2,7 +2,6 @@ package app
 
 import (
 	"blog_backend/app/router"
-	"blog_backend/app/util"
 	"blog_backend/app/validation"
 	"fmt"
 	"github.com/gin-gonic/gin/binding"
@@ -13,20 +12,19 @@ import (
 )
 
 // ReadRouters 读取router下的路由组
+// 自动执行，不依赖函数名
 func ReadRouters(g *gin.RouterGroup) {
-	var funcNames = util.GetFileBasename("app/router", []string{"go"})
-	if len(funcNames) == 0 {
-		return
-	}
-	// 获取反射值
-	value := reflect.ValueOf(&router.Router{})
-	in := []reflect.Value{reflect.ValueOf(g)}
-	for _, fnName := range funcNames {
-		fn := value.MethodByName(fnName) //通过反射获取它对应的函数
-		if fn.Kind() != reflect.Func || fn.IsNil() {
+	routes := router.Router{}
+	val := reflect.ValueOf(routes)
+	// 获取到该结构体有多少个方法
+	numOfMethod := val.NumMethod()
+	for i := 0; i < numOfMethod; i++ {
+		// 断言特定的方法
+		fn, ok := val.Method(i).Interface().(func(g *gin.RouterGroup))
+		if !ok {
 			continue
 		}
-		fn.Call(in)
+		fn(g)
 	}
 }
 

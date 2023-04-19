@@ -23,14 +23,14 @@ func AddSiteTraffic(c *gin.Context) {
 	c.JSON(http.StatusOK, r.Success(res))
 }
 
-func GetSiteTrafficPv(c *gin.Context) {
+func GetManySiteTrafficPv(c *gin.Context) {
 	r := result.New()
 	linkUrls := c.QueryArray("linkUrl")
 	if len(linkUrls) == 0 {
 		c.JSON(http.StatusOK, r.Fail("linkUrl is required"))
 		return
 	}
-	res, err := siteTrafficService.GetManySiteTraffic(c, linkUrls)
+	res, err := siteTrafficService.GetManySiteTrafficPv(c, linkUrls)
 	if err != nil {
 		c.JSON(http.StatusOK, r.FailErr(err))
 		return

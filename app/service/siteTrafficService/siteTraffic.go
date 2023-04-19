@@ -11,30 +11,24 @@ import (
 func AddSiteTraffic(c *gin.Context, reqVo siteTrafficVo.SiteTrafficAddReqVo) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
 	db := c.Value("DB").(*gorm.DB)
 
-	//var count int64
-	//startTime := time.Now().Format(time.DateOnly)
-	//endTime := time.Now().AddDate(0, 0, 1).Format(time.DateOnly)
-	//
-	//err := db.Where("link_url = ? and ip = ?", reqVo.LinkUrl, reqVo.Ip).
-	//	Where("create_at > ? and created_at < ?", startTime, endTime).
-	//	Count(&count).Error
-	//if err != nil {
-	//	return nil, err
-	//}
+	ip := c.ClientIP()
+	if ip == "::1" {
+		ip = "127.0.0.1"
+	}
 	siteTraffic := model.SiteTraffic{
 		LinkUrl: reqVo.LinkUrl,
-		Ip:      c.ClientIP(),
+		Ip:      ip,
 		Ua:      reqVo.Ua,
 	}
 	err := db.Create(&siteTraffic).Error
 	if err != nil {
 		return nil, err
 	}
-	return getPageAndSiteStat(c, reqVo.LinkUrl)
+	return getPageAndSiteStat(c, reqVo.LinkUrl, reqVo.NoPv)
 }
 
 // 插入逻辑：同一ip一天内访问多次只算一次uv.
-func getPageAndSiteStat(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
+func getPageAndSiteStat(c *gin.Context, linkUrl string, noPv bool) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
 	db := c.Value("DB").(*gorm.DB)
 	var siteTraffic model.SiteTraffic
 
@@ -43,32 +37,34 @@ func getPageAndSiteStat(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTraf
 	var sitePv int64
 	var siteUv int64
 
-	db.Model(&siteTraffic).Where("link_url = ?", linkUrl).Count(&pv)
-	data.Pv = int(pv)
+	if !noPv {
+		db.Model(&siteTraffic).Where("link_url = ?", linkUrl).Count(&pv)
+		data.Pv = int(pv)
+	}
 
 	db.Model(&siteTraffic).Count(&sitePv)
 	data.SitePv = int(sitePv)
 
-	uvSql := "select count(*) from (select ip, DATE_FORMAT(created_at, '%Y-%m-%d') date_time, count(*) count from site_traffic where is_del = 0 GROUP BY ip, date_time) t"
+	uvSql := "select count(*) from (" +
+		"select ip, DATE_FORMAT(created_at, '%Y-%m-%d') date_time, count(*) count from site_traffic where is_del = 0 GROUP BY ip, date_time" +
+		") t"
 	db.Raw(uvSql).Scan(&siteUv)
 	data.SiteUv = int(siteUv)
 	return &data, nil
 }
 
-// GetManySiteTraffic 获取多篇文章浏览量
-func GetManySiteTraffic(c *gin.Context, linkUrls []string) ([]siteTrafficVo.SiteTrafficUrlRespVo, error) {
+// GetManySiteTrafficPv 获取多篇文章浏览量
+func GetManySiteTrafficPv(c *gin.Context, linkUrls []string) ([]siteTrafficVo.SiteTrafficUrlRespVo, error) {
 	db := c.Value("DB").(*gorm.DB)
 
-	var siteTraffics []model.SiteTraffic
-	tx := db.Where("link_url in ?", linkUrls).Find(&siteTraffics)
+	var results []siteTrafficVo.SiteTrafficUrlRespVo
+	tx := db.Model(&model.SiteTraffic{}).
+		Select("link_url, count(*) pv").
+		Where("link_url in ?", linkUrls).
+		Group("link_url").
+		Find(&results)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
-	// 初始化
-	list := make([]siteTrafficVo.SiteTrafficUrlRespVo, len(linkUrls))
-	//for i, item := range siteTraffics {
-	//	list[i].LinkUrl = item.LinkUrl
-	//	list[i].Pv = item.LinkUrl
-	//}
-	return list, nil
+	return results, nil
 }

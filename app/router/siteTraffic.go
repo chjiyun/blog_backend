@@ -5,10 +5,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (r *Router) Article(g *gin.RouterGroup) {
+func (r Router) SiteTraffic(g *gin.RouterGroup) {
 	rg := g.Group("/site-traffic")
 	{
 		rg.POST("/", siteTrafficController.AddSiteTraffic)
-		rg.GET("/pvs", siteTrafficController.GetSiteTrafficPv)
+		rg.GET("/pvs", siteTrafficController.GetManySiteTrafficPv)
 	}
 }
