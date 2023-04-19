@@ -3,11 +3,11 @@
 pwd=$(pwd)
 # appName=`basename $pwd`
 # 从配置文件取name，默认是项目名，-r 代表过滤掉字符串的双引号
-appName=`cat ./config/config.yml | yq -r .name`
+appName=$(cat ./config/config.yml | yq -r .name)
 # 编译的分支
 branch="master"
 # 当前git分支名
-localBranch=`git rev-parse --abbrev-ref HEAD`
+localBranch=$(git rev-parse --abbrev-ref HEAD)
 # 编译后的输出文件名称，赋值当前项目文件名
 targetFile="$appName"
 # 编译的包名
@@ -17,11 +17,9 @@ buildResult=""
 # 应用启动端口
 port="7000"
 
-today=$(date "+%Y_%m_%d")
 # 日志存放路径
 logDir="/root/logs/${appName}"
-info_log="${logDir}/info.${today}.log"
-error_log="${logDir}/error.${today}.log"
+
 path="main"
 buildDir="./build"
 exeFile="${buildDir}/${targetFile}"
@@ -45,21 +43,22 @@ m=$(date -d "-6 months" "+%s")
 echo "半年前的日期: $(date -d @${m} "+%Y-%m-%d")"
 
 index=1
-f=`ls ${logDir} -1 -c`
+f=$(ls "${logDir}" -1 -c)
 
 # 清理旧日志文件
 for name in $f
 do
   # echo "日志${index}：$name"
-  dateStr=$(echo ${name} | grep -Eo "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
+  dateStr=$(echo "${name}" | grep -Eo "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
   # echo $dateStr
   # 判断是否有效
-  if date -d ${dateStr} > /dev/null 2>&1; then
-    t1=`date -d "$dateStr" +%s`
+  if date -d "${dateStr}" > /dev/null 2>&1; then
+    t1=$(date -d "$dateStr" +%s)
 
     if [ $t1 -lt $m ]; then
       echo ">>> delete file: ${name}"
-      rm -rf "${logDir}/${name}"
+      ls "${logDir}/${name:?}"
+      rm -f "${logDir}/${name:?}"
     fi
 
   fi
@@ -73,18 +72,18 @@ if [ ! -d "$buildDir" ]; then
 fi
 
 flags="-X '${path}.AppVersion=v1.0' -X '${path}.GoVersion=$(go version | awk '{print $3 " " $4}')' -X '${path}.BuildTime=$(date "+%Y.%m.%d %H:%M:%S")' -X '${path}.BuildUser=$(id -u -n)' -X '${path}.CommitId=$(git rev-parse --short HEAD)'"
-buildResult=`go build -ldflags "$flags" -o "${exeFile}" "$buildPkg"`
+buildResult=$(go build -ldflags "$flags" -o "${exeFile}" "$buildPkg")
 
 # 编译成功才能杀旧进程
 if [ $? -eq 0 ]; then 
   chmod 773 "${exeFile}"
   echo "build success, filename: ${exeFile}"
 
-  pid=`ps -ef |grep $targetFile | grep -v grep|awk '{print $2}'`
+  pid=$(ps -ef |grep "$targetFile" | grep -v grep|awk '{print $2}')
   echo "current pid is $pid"
   if [ -n "$pid" ]; then
     echo "Prepare to kill the process: ${pid}"
-    kill -9 $pid
+    kill -9 "$pid"
     sleep 1
   fi
 else
