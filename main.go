@@ -35,8 +35,8 @@ func main() {
 	config.Init()
 
 	r := gin.New()
-	r.ForwardedByClientIP = true
-	_ = r.SetTrustedProxies(nil)
+	//192.168.0.0/16 172.18.0.0/12
+	_ = r.SetTrustedProxies([]string{"127.0.0.0/8", "10.0.0.0/8"})
 
 	r.Use(middleware.LoggerToFile(), middleware.SetTimeout(), middleware.SetContext(), middleware.JWTAuth(), gin.Recovery())
 
