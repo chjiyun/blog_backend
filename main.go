@@ -34,8 +34,8 @@ func main() {
 	// 初始化配置
 	config.Init()
 
-	// r := gin.Default()
 	r := gin.New()
+	r.ForwardedByClientIP = true
 	_ = r.SetTrustedProxies(nil)
 
 	r.Use(middleware.LoggerToFile(), middleware.SetTimeout(), middleware.SetContext(), middleware.JWTAuth(), gin.Recovery())
