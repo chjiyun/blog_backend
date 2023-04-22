@@ -18,7 +18,9 @@ func AddSiteTraffic(c *gin.Context, reqVo siteTrafficVo.SiteTrafficAddReqVo) (*s
 	siteTraffic := model.SiteTraffic{
 		LinkUrl: reqVo.LinkUrl,
 		Ip:      ip,
-		Ua:      reqVo.Ua,
+		Browser: reqVo.Browser,
+		Os:      reqVo.Os,
+		Device:  reqVo.Device,
 	}
 	err := db.Create(&siteTraffic).Error
 	if err != nil {
