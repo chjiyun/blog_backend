@@ -19,9 +19,11 @@ func JWTAuth() gin.HandlerFunc {
 		r := result.New()
 		jwtConfig := config.Cfg.Jwt
 
-		reWhitelist, _ := regexp.Compile(jwtConfig.Whitelist)
-		if reWhitelist.MatchString(c.Request.URL.Path) {
-			return
+		if jwtConfig.Whitelist != "" {
+			reWhitelist := regexp.MustCompile(jwtConfig.Whitelist)
+			if reWhitelist.MatchString(c.Request.URL.Path) {
+				return
+			}
 		}
 
 		token, err := c.Cookie("token")
