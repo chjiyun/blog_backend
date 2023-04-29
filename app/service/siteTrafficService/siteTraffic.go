@@ -78,8 +78,8 @@ func cacheSiteTraffic(c *gin.Context, linkUrl, ip string) (*siteTrafficVo.SiteTr
 	return &resp, nil
 }
 
-// 插入逻辑：同一ip一天内访问多次只算一次uv.
-func getPageAndSiteStat(c *gin.Context, linkUrl string, noPv bool) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
+// GetSiteTraffic 实时查询 插入逻辑：同一ip一天内访问多次只算一次uv.
+func GetSiteTraffic(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
 	db := c.Value("DB").(*gorm.DB)
 	var siteTraffic model.SiteTraffic
 
@@ -88,10 +88,8 @@ func getPageAndSiteStat(c *gin.Context, linkUrl string, noPv bool) (*siteTraffic
 	var sitePv int64
 	var siteUv int64
 
-	if !noPv {
-		db.Model(&siteTraffic).Where("link_url = ?", linkUrl).Count(&pv)
-		data.Pv = int(pv)
-	}
+	db.Model(&siteTraffic).Where("link_url = ?", linkUrl).Count(&pv)
+	data.Pv = int(pv)
 
 	db.Model(&siteTraffic).Count(&sitePv)
 	data.SitePv = int(sitePv)

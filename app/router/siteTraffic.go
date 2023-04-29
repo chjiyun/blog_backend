@@ -10,6 +10,7 @@ func (r Router) SiteTraffic(g *gin.RouterGroup) {
 	rg := g.Group("/site-traffic")
 	{
 		rg.POST("", siteTrafficController.AddSiteTraffic)
+		rg.GET("", siteTrafficController.GetSiteTraffic)
 		rg.GET("/pvs", siteTrafficController.GetManySiteTrafficPv)
 	}
 }
