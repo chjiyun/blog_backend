@@ -21,6 +21,8 @@ func AddSiteTraffic(c *gin.Context, reqVo siteTrafficVo.SiteTrafficAddReqVo) (*s
 	ip := c.ClientIP()
 	if ip == "::1" {
 		ip = "127.0.0.1"
+	}
+	if ip == "127.0.0.1" {
 		return getStatFromCache(c, reqVo.LinkUrl)
 	}
 	siteTraffic := model.SiteTraffic{
