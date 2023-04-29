@@ -5,7 +5,6 @@ import (
 	"blog_backend/app/model"
 	"blog_backend/config"
 	"context"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"strconv"
@@ -22,7 +21,7 @@ func AddSiteTraffic(c *gin.Context, reqVo siteTrafficVo.SiteTrafficAddReqVo) (*s
 	ip := c.ClientIP()
 	if ip == "::1" {
 		ip = "127.0.0.1"
-		return nil, errors.New(ip + "is not considered")
+		return getStatFromCache(c, reqVo.LinkUrl)
 	}
 	siteTraffic := model.SiteTraffic{
 		LinkUrl: reqVo.LinkUrl,
@@ -100,6 +99,21 @@ func GetSiteTraffic(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTrafficW
 	db.Raw(uvSql).Scan(&siteUv)
 	data.SiteUv = int(siteUv)
 	return &data, nil
+}
+
+// 从redis拿数据
+func getStatFromCache(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTrafficWholeRespVo, error) {
+	redisDb := config.RedisDb
+	var resp siteTrafficVo.SiteTrafficWholeRespVo
+
+	sitePv, _ := redisDb.Get(c, "blog:site_pv").Int64()
+	siteUv, _ := redisDb.Get(c, "blog:site_uv").Int64()
+	postPv, _ := redisDb.HGet(c, "blog:post_pv", linkUrl).Int64()
+	resp.SitePv = int(sitePv)
+	resp.SiteUv = int(siteUv)
+	resp.Pv = int(postPv)
+
+	return &resp, nil
 }
 
 // GetManySiteTrafficPv 获取多篇文章浏览量
