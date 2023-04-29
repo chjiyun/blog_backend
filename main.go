@@ -71,6 +71,8 @@ func main() {
 	// }
 	// log.Println("Server exiting")
 
+	app.InitSchedule()
+
 	// By default it serves on :8080 unless a
 	// PORT environment variable was defined.
 	// r.Run(":8000") for a hard coded port
