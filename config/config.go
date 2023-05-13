@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"github.com/ua-parser/uap-go/uaparser"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,14 +27,15 @@ import (
 )
 
 type Config struct {
-	Basedir    string
-	Name       string       `yaml:"name"`
-	Env        string       `yaml:"env"`
-	Server     Server       `yaml:"server"`
-	Redis      Redis        `yaml:"redis"`
-	Datasource []Datasource `yaml:"datasource"`
-	Log        Log          `yaml:"log"`
-	Jwt        JwtConfig    `yaml:"jwt"`
+	Basedir      string
+	Name         string       `yaml:"name"`
+	Env          string       `yaml:"env"`
+	Server       Server       `yaml:"server"`
+	Redis        Redis        `yaml:"redis"`
+	Datasource   []Datasource `yaml:"datasource"`
+	Log          Log          `yaml:"log"`
+	Jwt          JwtConfig    `yaml:"jwt"`
+	Ip2RegionUrl string       `yaml:"ip2RegionUrl"`
 }
 type Server struct {
 	Port    string `yaml:"port"`
@@ -80,7 +82,9 @@ var DB *gorm.DB
 // logrus实例指针
 var Logger = logrus.New()
 
-// 初始化 config 配置
+var Parser *uaparser.Parser
+
+// Init 初始化 config 配置
 func Init() {
 	// 解析默认基础配置文件
 	filename := filepath.Join("config", "config.yml")
@@ -134,9 +138,10 @@ func Init() {
 
 	// fmt.Println("merge Config:", Cfg)
 	// 按顺序执行
-	LogInit()
+	logInit()
 	redisInit()
 	dbInit()
+	uaParserInit()
 }
 
 // 解析并合并对应环境的 yml配置信息
@@ -228,7 +233,7 @@ func dbInit() {
 }
 
 // logrus实例初始化
-func LogInit() {
+func logInit() {
 	logFilePath := Cfg.Log.Filepath
 	logFileName := Cfg.Log.Filename
 	if logFileName == "" {
@@ -306,9 +311,17 @@ func LogInit() {
 	Logger.AddHook(lfHook)
 }
 
-// 实现gorm/logger.Writer接口
+// Printf 实现gorm/logger.Writer接口
 func (m *SqlWriter) Printf(format string, v ...interface{}) {
-	logstr := fmt.Sprintf(format, v...)
-	// 利用logrus记录日志
-	m.log.Info(logstr)
+	logStr := fmt.Sprintf(format, v...)
+	// 利用loggers记录日志
+	m.log.Info(logStr)
+}
+
+func uaParserInit() {
+	var err error
+	Parser, err = uaparser.New(filepath.Join(Cfg.Basedir, "config/regexes.yaml"))
+	if err != nil {
+		panic(err)
+	}
 }

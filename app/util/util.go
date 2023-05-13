@@ -88,7 +88,12 @@ func WriteString(str ...string) string {
 	if len(str) == 1 {
 		return str[0]
 	}
+	length := 0
+	for _, s := range str {
+		length += len(s) // 字节长度
+	}
 	var b strings.Builder
+	b.Grow(length)
 	for _, s := range str {
 		b.WriteString(s)
 	}
