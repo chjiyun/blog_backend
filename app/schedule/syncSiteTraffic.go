@@ -13,10 +13,10 @@ func (s Schedule) SyncSiteTraffic() MySchedule {
 	task.Task = func() {
 		err := siteTrafficService.SyncSiteTraffic(false)
 		if err != nil {
-			config.Logger.Error(err)
+			config.SugarLog.Error(err)
 			return
 		}
-		config.Logger.Info("siteTraffic统计数据已同步至redis")
+		config.SugarLog.Info("siteTraffic统计数据已同步至redis")
 	}
 	return task
 }

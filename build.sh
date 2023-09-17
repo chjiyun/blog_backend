@@ -42,34 +42,56 @@ m=$(date -d "-6 months" "+%s")
 
 echo "半年前的日期: $(date -d @${m} "+%Y-%m-%d")"
 
-index=1
-f=$(ls "${logDir}" -1 -c)
-
-# 清理旧日志文件
-for name in $f
-do
-  # echo "日志${index}：$name"
-  dateStr=$(echo "${name}" | grep -Eo "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
-  # echo $dateStr
-  # 判断是否有效
-  if date -d "${dateStr}" > /dev/null 2>&1; then
-    t1=$(date -d "$dateStr" +%s)
-
-    if [ $t1 -lt $m ]; then
-      echo ">>> delete file: ${name}"
-      ls "${logDir}/${name:?}"
-      rm -f "${logDir}/${name:?}"
-    fi
-
-  fi
-  let index++
-done
-
-echo "complete the clean"
+#index=1
+#f=$(ls "${logDir}" -1 -c)
+#
+## 清理旧日志文件
+#for name in $f
+#do
+#  # echo "日志${index}：$name"
+#  dateStr=$(echo "${name}" | grep -Eo "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
+#  # echo $dateStr
+#  # 判断是否有效
+#  if date -d "${dateStr}" > /dev/null 2>&1; then
+#    t1=$(date -d "$dateStr" +%s)
+#
+#    if [ $t1 -lt $m ]; then
+#      echo ">>> delete file: ${name}"
+#      ls "${logDir}/${name:?}"
+#      rm -f "${logDir}/${name:?}"
+#    fi
+#
+#  fi
+#  let index++
+#done
 
 if [ ! -d "$buildDir" ]; then
   mkdir "$buildDir"
 fi
+
+# 等待进程退出
+wait_for_process_exit() {
+  local pidKilled=$1
+  local begin=$(date +%s)
+  local end
+  local failed=0
+  while kill -0 "$pidKilled" > /dev/null 2>&1
+  do
+    echo -n "."
+    sleep 1;
+    end=$(date +%s)
+    if [ $((end-begin)) -gt 60 ];then
+        failed=1
+        printf "\nTimeout...\n"
+        break;
+    fi
+  done
+  if [ $failed -eq 0 ];then
+    printf "\n"
+  else
+    exit
+  fi
+}
 
 flags="-X '${path}.AppVersion=v1.0' -X '${path}.GoVersion=$(go version | awk '{print $3 " " $4}')' -X '${path}.BuildTime=$(date "+%Y.%m.%d %H:%M:%S")' -X '${path}.BuildUser=$(id -u -n)' -X '${path}.CommitId=$(git rev-parse --short HEAD)'"
 buildResult=$(go build -ldflags "$flags" -o "${exeFile}" "$buildPkg")
@@ -82,19 +104,19 @@ if [ $? -eq 0 ]; then
   pid=$(ps -ef |grep "$targetFile" | grep -v grep|awk '{print $2}')
   echo "current pid is $pid"
   if [ -n "$pid" ]; then
-    echo "Prepare to kill the process: ${pid}"
-    kill -9 "$pid"
-    sleep 1
+    echo "Try to kill the process: ${pid}"
+    kill "$pid" && wait_for_process_exit "$pid"
   fi
 else
   echo "build error $buildResult"
   exit
 fi
 
+echo "start server..."
+
 # nohup "${exeFile}" 1>"${info_log}" 2>"${error_log}" & echo $! > "$pidFile"
 nohup "${exeFile}" 1>/dev/null 2>&1 &
 
-echo "starting..."
 # 监听端口是否启动
 while :
 do

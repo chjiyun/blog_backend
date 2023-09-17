@@ -6,6 +6,7 @@ import (
 	"blog_backend/config"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/yitter/idgenerator-go/idgen"
 	"os"
 )
 
@@ -33,6 +34,7 @@ func main() {
 
 	// 初始化配置
 	config.Init()
+	defer config.SugarLog.Sync()
 
 	r := gin.New()
 	//192.168.0.0/16 172.18.0.0/12
@@ -70,6 +72,10 @@ func main() {
 	// 	log.Fatal("Server Shutdown:", err)
 	// }
 	// log.Println("Server exiting")
+
+	options := idgen.NewIdGeneratorOptions(2)
+	idgen.SetIdGenerator(options)
+	fmt.Println(">>>雪花id生成器初始化完成")
 
 	app.InitSchedule()
 

@@ -8,14 +8,15 @@ import (
 	"blog_backend/config"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"github.com/sirupsen/logrus"
+	"github.com/yitter/idgenerator-go/idgen"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"time"
 )
 
 func AddComment(c *gin.Context, reqVo commentVo.CommentAddReqVo) (*commentVo.CommentRespVo, error) {
 	db := c.Value("DB").(*gorm.DB)
-	log := c.Value("Logger").(*logrus.Entry)
+	log := c.Value("Logger").(*zap.SugaredLogger)
 
 	var resp commentVo.CommentRespVo
 
@@ -36,6 +37,7 @@ func AddComment(c *gin.Context, reqVo commentVo.CommentAddReqVo) (*commentVo.Com
 		Status:     status,
 		InsertedAt: time.Now(),
 	}
+	comment.ID = idgen.NextId()
 	db.Create(&comment)
 	_ = copier.Copy(&resp, &comment)
 	if err := respHandler(&resp); err != nil {

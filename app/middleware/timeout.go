@@ -3,6 +3,7 @@ package middleware
 import (
 	"blog_backend/config"
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -19,7 +20,7 @@ func SetTimeout() func(c *gin.Context) {
 
 		defer func() {
 			// check if context timeout was reached
-			if ctx.Err() == context.DeadlineExceeded {
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 
 				// write response and abort the request
 				c.Writer.WriteHeader(http.StatusGatewayTimeout)

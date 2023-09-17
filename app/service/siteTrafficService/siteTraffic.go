@@ -6,6 +6,7 @@ import (
 	"blog_backend/config"
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/yitter/idgenerator-go/idgen"
 	"gorm.io/gorm"
 	"strconv"
 	"time"
@@ -32,6 +33,7 @@ func AddSiteTraffic(c *gin.Context, reqVo siteTrafficVo.SiteTrafficAddReqVo) (*s
 		Os:      reqVo.Os,
 		Device:  reqVo.Device,
 	}
+	siteTraffic.ID = idgen.NextId()
 	go func(data model.SiteTraffic) {
 		config.DB.Create(&data)
 	}(siteTraffic)
