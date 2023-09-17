@@ -98,7 +98,7 @@ func GetSiteTraffic(c *gin.Context, linkUrl string) (*siteTrafficVo.SiteTrafficW
 	data.SitePv = int(sitePv)
 
 	uvSql := "select count(*) from (" +
-		"select ip, DATE_FORMAT(created_at, '%Y-%m-%d') date_time from site_traffic where is_del = 0 GROUP BY ip, date_time" +
+		"select ip, date(created_at) date_time from site_traffic where is_del = 0 GROUP BY ip, date_time" +
 		") t"
 	db.Raw(uvSql).Scan(&siteUv)
 	data.SiteUv = int(siteUv)
@@ -174,7 +174,7 @@ func SyncSiteTraffic(resetSiteUvFilter bool) error {
 	// 数据写进布隆过滤器
 	if resetSiteUvFilter {
 		var ipDates []IpDate
-		err = db.Model(&siteTraffic).Select("ip, DATE_FORMAT(created_at, '%Y-%m-%d') as date").
+		err = db.Model(&siteTraffic).Select("ip, to_char(created_at, 'yyyy-mm-dd') as date").
 			Group("ip, date").Order("date").Find(&ipDates).Error
 		if err != nil {
 			return err
@@ -187,7 +187,7 @@ func SyncSiteTraffic(resetSiteUvFilter bool) error {
 		redisDb.Do(context.Background(), args...)
 	}
 	uvSql := "select count(*) from (" +
-		"select ip, DATE_FORMAT(created_at, '%Y-%m-%d') date_time from site_traffic where is_del = 0 GROUP BY ip, date_time" +
+		"select ip, date(created_at) date_time from site_traffic where is_del = 0 GROUP BY ip, date_time" +
 		") t"
 	db.Raw(uvSql).Scan(&siteUv)
 	redisDb.Set(context.Background(), "blog:site_uv", siteUv, 0)

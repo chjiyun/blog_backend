@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -78,8 +77,6 @@ var DB *gorm.DB
 
 var SugarLog *zap.SugaredLogger
 
-var Parser *uaparser.Parser
-
 // Init 初始化 config 配置
 func Init() {
 	// 解析默认基础配置文件
@@ -138,7 +135,6 @@ func Init() {
 	zapLogInit()
 	redisInit()
 	dbInit()
-	uaParserInit()
 }
 
 // 解析并合并对应环境的 yml配置信息
@@ -385,12 +381,4 @@ func zapLogInit() {
 // Printf 实现gorm/logger.Writer接口
 func (m *SqlWriter) Printf(format string, v ...interface{}) {
 	m.log.Infof(format, v...)
-}
-
-func uaParserInit() {
-	var err error
-	Parser, err = uaparser.New(filepath.Join(Cfg.Basedir, "config/regexes.yaml"))
-	if err != nil {
-		panic(err)
-	}
 }
